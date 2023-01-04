@@ -153,7 +153,7 @@ def get_quaternion_from_euler(roll, pitch, yaw):
   qw = np.cos(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
   return [ qw, qx, qy, qz]
  
-def euler_from_quaternion(x, y, z, w):
+def euler_from_quaternion(w, x, y, z):
         """
         Convert a quaternion into euler angles (roll, pitch, yaw)
         roll is rotation around x in radians (counterclockwise)
@@ -184,9 +184,15 @@ def getSamplePos(i):
 
     pos1 = pos(1,2,3,*get_quaternion_from_euler(0,0,deg2rad(0)))
     poseList.append(pos1)
-    pos1 = pos(4,5,7,*get_quaternion_from_euler(0,0,deg2rad(90)))
+    # pos1 = pos(10,2,7,*get_quaternion_from_euler(0,0,deg2rad(0)))
+    # poseList.append(pos1)
+    # pos1 = pos(4,5,7,*get_quaternion_from_euler(0,0,deg2rad(90)))
+    # poseList.append(pos1)
+    pos1 = pos(1.5,2.7,0,*get_quaternion_from_euler(0,0,deg2rad(65)))
     poseList.append(pos1)
     pos1 = pos(6,6,0,*get_quaternion_from_euler(0,0,deg2rad(45)))
     poseList.append(pos1)
     return poseList[i]
 
+def yaw2xy(pos):
+    return euler_from_quaternion(pos.ow, pos.ox, pos.oy, pos.oz) #RPY
