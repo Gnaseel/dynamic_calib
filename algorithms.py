@@ -5,25 +5,39 @@ from scipy import interpolate
 from Bezier import Bezier
 from numpy.random import default_rng
 
-RNG = default_rng(1234)
+RNG = default_rng(23452345)
 
 def getNoise(mat, rot_off, trans_off, noise):
-    # mat = odom_set.pos_2_TFMat(pos)
+    """
+    Returns a 4*4 noise matrix
+    INPUTS:
+        mat         4*4 pos matrix
+        rot_off     rotation offset (rad)
+        trans_off   trans offset (m)
+        noise       distribution of noise (normal, uniform)
+    OUTPUTS:
+        r_mat       4*4 noise matrix
+    """
 
     noise_rpy = getattr(RNG,noise)(-rot_off, rot_off,3)
     noise_xyz = getattr(RNG,noise)(-trans_off, trans_off,3)
 
     noise_rotation_mat = odom_set.quaternion_rotation_matrix(odom_set.get_quaternion_from_euler(*noise_rpy))
-
     re_mat = np.eye(4)
     re_mat[:3,:3] = noise_rotation_mat
-    re_mat = np.matmul(re_mat, mat)
-    re_mat[3,:3] += noise_xyz 
-    # print(f"T NOISE {noise_xyz}")
-    # print(f"ORI MAT {mat}")
-    # print(f"RRR MAT {re_mat}")
+    re_mat[3,:3] += noise_xyz
+
     return re_mat
+
 def getIntersectionFromPoints(pos1, pos2):
+    """
+    Returns a intersection point about input
+    INPUTS:
+        pos1, pos2  coordnate (x,y)
+    OUTPUTS:
+        px, py      intersection coordnate
+    """
+
     pos1_yaw = odom_set.yaw2xy(pos1)[2]
     pos2_yaw = odom_set.yaw2xy(pos2)[2]
     print(f"POS1 {pos1}")
@@ -43,6 +57,15 @@ def getIntersectionFromPoints(pos1, pos2):
     return px, py
 
 def getCameraTrajFromLiDAR(lidar_traj, calib_mat):
+    """
+    Return camera trajectory from lidar trajectory and calibration matrix
+    INPUTS:
+        lidar_traj      trajectory of lidar  [pos1, pos2, pos3...]
+        calib_mat       4*4 calibration matrix between cam&lidar
+    OUTPUTS:
+        camera_traj     trajectory of camera [pos1, pos2, pos3...]
+    """
+
     camera_traj = []
     for lidar_pos in lidar_traj:
         # pos = odom_set.pos(lidar_pos.x, lidar_pos.y)
@@ -61,7 +84,14 @@ def getCameraTrajFromLiDAR(lidar_traj, calib_mat):
     return camera_traj
 
 def getTrajFromOdom(pos1, pos2):
-    print("HERE")
+    """
+    Returns trajectory from 2 odom vectors
+    INPUTS:
+        pos         odom vector
+    OUTPUTS:
+        pos_list    trajectory with bezier curve [pos1, pos2, pos3....]
+    """
+
     dist = math.sqrt(math.pow(pos2.x-pos1.x, 2) + math.pow(pos2.y-pos1.y, 2))
     pos2_mat = odom_set.pos_2_TFMat(pos2)
     pred_delta = odom_set.pos_2_TFMat(odom_set.pos(dist, 0, 0, 1, 0, 0, 0))
