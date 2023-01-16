@@ -172,7 +172,7 @@ def euler_from_quaternion(w, x, y, z):
         t3 = +2.0 * (w * z + x * y)
         t4 = +1.0 - 2.0 * (y * y + z * z)
         yaw_z = math.atan2(t3, t4)
-     
+        
         return [roll_x, pitch_y, yaw_z] # in radians
 
 def getOdomDelta(pos_prev, pos_curr):
@@ -194,5 +194,14 @@ def getSamplePos(i):
     poseList.append(pos1)
     return poseList[i]
 
-def yaw2xy(pos):
+def getRPY_fromPos(pos):
+    """
+    return rpy from pos
+    INPUTS:
+        pos     pos (wxyz required)
+    OUTPUTS
+        rpy     [roll, pitch, yaw]  (rad)
+    """
     return euler_from_quaternion(pos.ow, pos.ox, pos.oy, pos.oz) #RPY
+
+    
