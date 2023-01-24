@@ -22,26 +22,16 @@ def draw_traj(pos_list):
     y_list = np.array(y_list)
     plt.plot( x_list, y_list, color='g')
 
-def noise_viz(noise_mat_list):
+def noise_viz(noise_list):
     """
     Visualizes distribution of noise with matplot
     INPUTS:
         noise_mat_list   list of (4*4) noise matrix
     """
     name_list = ["roll", "pitch", "yaw", "x", "y", "z"]
-    noise_list = [[] for i in range(6)] # list of rpyxyz
-    print("-------------")
-    for noise_mat in noise_mat_list:
-        nroll, npitch, nyaw = odom_set.euler_from_quaternion(*odom_set.rotationMatrix_2_Quaternion(noise_mat[:3,:3]))
-        nx, ny, nz = noise_mat[3,:3]
-        noise_list[0].append(nroll)
-        noise_list[1].append(npitch)
-        noise_list[2].append(nyaw)
-        noise_list[3].append(nx)
-        noise_list[4].append(ny)
-        noise_list[5].append(nz)
-    # print(f"Nr List {noise_list[3]}")
 
+    entropy_list = []
+    std_list = []
     for i in range(6):
         plt.subplot(2,3,i+1)
         a = np.array(noise_list[i]).reshape(-1, 1)
@@ -52,38 +42,28 @@ def noise_viz(noise_mat_list):
         else:
             width = 2
         s = np.linspace(-width,width, 1000)
-        # s = np.linspace(0,1, 10)
         e = kde.score_samples(s.reshape(-1,1))
 
         valmin = np.min(a)
         valmax = np.max(a)
-        # plt.fill(s, np.exp(e), fc="#AAAAFF")
-        
         plt.fill(s, np.exp(e), fc="#AAAAFF")
-        # interval = np.linspace(0, 0.004, 1000)[:, np.newaxis]
-        # log_dens = kde.score_samples(interval)
         
 
-        # histo = np.zero()
-        # print(f"A = {a}")
-        # bins = np.arange(valmin, valmax)
         hist, bins = np.histogram(a)
-        print(f"Hist {hist}")
-        print(f"Bins {bins}")
+        # print(f"Hist {hist}")
+        # print(f"Bins {bins}")
         hist = np.divide(hist, np.sum(hist))
-        # print(f"SUM {np.sum(hist)}")
-        # hist /= np.linalg.norm(hist)
-        # my_entropy =  -np.sum(hist*np.log(hist))
         H = entropy(hist)
-        print(f"    H {H}")
-        # noise_np = np.array(a)
-        # entropy = -np.sum(p*np.log(p))
-
-        # print(f"Val min {valmin}")
-        # print(f"Val max {valmax}")
+        std = np.std(a)
+        entropy_list.append(H)
+        std_list.append(std)
+        print(f"    Entropy {H}")
+        print(f"    Std {std}")
         plt.ylim(0,12)
         plt.text(0, -2, name_list[i], size=20, ha='center')
 
+    print(f"    Entropy mean {sum(entropy_list)/len(entropy_list)}")
+    print(f"    STV mean {sum(std_list)/len(std_list)}")
     return
 
 def viz_odom(quiver_list = [], cfg = None, liDAR_traj = None, camera_traj = None):
