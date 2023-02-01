@@ -37,37 +37,47 @@ def getNoiseDis(noise_list):
         pdf_list.append(kde)
     return pdf_list
 
-def getNoiseMat_from_trajList(traj_list):
-    noise_mat_list=[]
+def getNoiseMat_list_from_traj(traj):
+    """
+    get noise matrix list from traj_list
+    INPUTS:
+        traj_list   : list of traj [pos1, pos2, pos3...]
+    OUTPUTS:
+        noise_mat_list : [noise1, noise2, noise3...] (format : 4*4 matrix)
+    """
     cfg = odom_set.cfg()
     calib_mat = odom_set.pos_2_TFMat(cfg.CalibExtrinsic)
+    # print(f"TRAJ ---- {traj}")
+    noise_mat_list=[]
+    ori_lidar_mat = odom_set.pos_2_TFMat(traj[int(len(traj)/2)])
+    ori_cam_mat = odom_set.pcTransform(ori_lidar_mat, calib_mat)
+    # print(f"Ori cam {ori_cam_mat[3]}")
+    for lidar_pos in traj:
+        lidar_mat = odom_set.pos_2_TFMat(lidar_pos)
+        # print(f" LiDAR {lidar_pos}")
+        # print(f"LiDAR POSE {lidar_pos}")
+        camera_mat = odom_set.pcTransform(lidar_mat, calib_mat)
+        noise_mat = getNoise(camera_mat, odom_set.deg2rad(5), 0.03, "normal")
+        # noise_mat = algorithms.getNoise(camera_mat, odom_set.deg2rad(5), 0.1, "uniform")
+        abs_noise_mat = odom_set.pcTransform(camera_mat, noise_mat)
+        abs_noise_mat[3,:3] -= ori_cam_mat[3,:3]
+        reverse_cam_mat = np.eye(4)
+        reverse_cam_mat[:3,:3] = np.transpose(ori_cam_mat[:3,:3])
+        abs_noise_mat = odom_set.pcTransform(abs_noise_mat, reverse_cam_mat)
+        # abs_noise_pos = odom_set.TFMat_2_pos(abs_noise_mat)
+        # r, p, y = odom_set.getRPY_fromPos(abs_noise_pos)
+        # cam_pos = odom_set.TFMat_2_pos(camera_mat)
+        # cr, cp, cy = odom_set.getRPY_fromPos(cam_pos)
+        # Uniform noise
+        # abs_noise_mat = getNoise(camera_mat, odom_set.deg2rad(20), 1.5, "uniform")
+        noise_mat_list.append(abs_noise_mat)
+    return noise_mat_list
 
+def getNoiseMat_from_trajList(traj_list):
+    noise_mat_list=[]
     for traj in traj_list:
-        ori_lidar_mat = odom_set.pos_2_TFMat(traj[int(len(traj)/2)])
-        ori_cam_mat = odom_set.pcTransform(ori_lidar_mat, calib_mat)
-        # print(f"Ori cam {ori_cam_mat[3]}")
-        for lidar_pos in traj:
-            lidar_mat = odom_set.pos_2_TFMat(lidar_pos)
-            # print(f" LiDAR {lidar_pos}")
-            # print(f"LiDAR POSE {lidar_pos}")
-            camera_mat = odom_set.pcTransform(lidar_mat, calib_mat)
-            noise_mat = getNoise(camera_mat, odom_set.deg2rad(5), 0.05, "normal")
-            # noise_mat = algorithms.getNoise(camera_mat, odom_set.deg2rad(5), 0.1, "uniform")
-            abs_noise_mat = odom_set.pcTransform(camera_mat, noise_mat)
+        noise_mat_list.extend(getNoiseMat_list_from_traj(traj))
 
-            abs_noise_mat[3,:3] -= ori_cam_mat[3,:3]
-            reverse_cam_mat = np.eye(4)
-            reverse_cam_mat[:3,:3] = np.transpose(ori_cam_mat[:3,:3])
-
-            abs_noise_mat = odom_set.pcTransform(abs_noise_mat, reverse_cam_mat)
-            abs_noise_pos = odom_set.TFMat_2_pos(abs_noise_mat)
-            r, p, y = odom_set.getRPY_fromPos(abs_noise_pos)
-            cam_pos = odom_set.TFMat_2_pos(camera_mat)
-            cr, cp, cy = odom_set.getRPY_fromPos(cam_pos)
-
-            # Uniform noise
-            abs_noise_mat = getNoise(camera_mat, odom_set.deg2rad(20), 1.5, "uniform")
-            noise_mat_list.append(abs_noise_mat)
 
     noise_list = [[] for i in range(6)] # list of rpyxyz
     for noise_mat in noise_mat_list:
@@ -166,7 +176,6 @@ def getTrajFromOdom(pos1, pos2):
     OUTPUTS:
         pos_list    trajectory with bezier curve [pos1, pos2, pos3....]
     """
-
     dist = math.sqrt(math.pow(pos2.x-pos1.x, 2) + math.pow(pos2.y-pos1.y, 2))
     pos2_mat = odom_set.pos_2_TFMat(pos2)
     # pred_delta = odom_set.pos_2_TFMat(odom_set.pos(dist, 0, 0, 1, 0, 0, 0))

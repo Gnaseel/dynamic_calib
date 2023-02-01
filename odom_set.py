@@ -4,13 +4,13 @@ import copy
 
 class pos:
     def __init__(self, x=0,y=0,z=0,ow=1, ox=0,oy=0,oz=0):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.ox = ox
-        self.oy = oy
-        self.oz = oz
-        self.ow = ow
+        self.x  = float(x)
+        self.y  = float(y)
+        self.z  = float(z)
+        self.ox = float(ox)
+        self.oy = float(oy)
+        self.oz = float(oz)
+        self.ow = float(ow)
         return
     def __str__(self):
         return f"x = {self.x} , y = {self.y} , z = {self.z} , ow = {self.ow} , ox = {self.ox} , oy = {self.oy} , oz = {self.oz}"

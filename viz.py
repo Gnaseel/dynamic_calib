@@ -35,7 +35,7 @@ def noise_viz(noise_list):
     for i in range(6):
         plt.subplot(2,3,i+1)
         a = np.array(noise_list[i]).reshape(-1, 1)
-
+        # print(a)
         kde = KernelDensity(kernel='gaussian', bandwidth=0.01).fit(a)
         if i<3:
             width = 1.0
@@ -143,5 +143,6 @@ def viz_trajectories(traj_list):
     return
 
 def plot_show():
-    plt.show()
+    # plt.show()
+    plt.savefig("/workspace/src/src/dynamic_calib/hi_ori.png")
     
